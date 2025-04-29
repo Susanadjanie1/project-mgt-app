@@ -23,7 +23,7 @@ export default function TaskCard({ task, mutate }) {
     toast(
       ({ closeToast }) => (
         <div>
-          <p>Delete "{task.title}"?</p>
+          <p>Delete &quot;{task.title}&quot;?</p>
           <div className="flex justify-end gap-2 mt-2">
             <button
               onClick={async () => {
