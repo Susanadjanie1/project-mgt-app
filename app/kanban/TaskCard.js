@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { toast } from 'react-toastify';
+import { useState } from "react";
+import { toast } from "react-toastify";
 
 export default function TaskCard({ task, mutate }) {
   const [status, setStatus] = useState(task.status);
@@ -11,8 +11,8 @@ export default function TaskCard({ task, mutate }) {
     const newStatus = e.target.value;
     setStatus(newStatus);
     await fetch(`/api/tasks/${task.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: newStatus }),
     });
     mutate();
@@ -27,7 +27,7 @@ export default function TaskCard({ task, mutate }) {
           <div className="flex justify-end gap-2 mt-2">
             <button
               onClick={async () => {
-                await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' });
+                await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
                 mutate();
                 closeToast();
               }}
@@ -48,7 +48,11 @@ export default function TaskCard({ task, mutate }) {
   return (
     <div className="bg-white p-3 rounded shadow flex items-center justify-between">
       <div>
-        <p className="font-medium">{task.title}</p>
+        <p className="font-semibold">{task.title}</p>
+        <p className="text-sm text-gray-600">{task.description}</p>
+        <p className="text-xs">Priority: {task.priority}</p>
+        <p className="text-xs">Due: {task.dueDate}</p>
+
         <select
           className="mt-1 border p-1 text-sm"
           value={status}

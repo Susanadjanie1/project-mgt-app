@@ -1,26 +1,40 @@
-// app/api/tasks/[id]/route.js
+import connectDB from 'lib/db';
+import Task from 'app/models/Task';
 import { NextResponse } from 'next/server';
-import tasks from '@/data/tasks';
+
+export async function GET(req, { params }) {
+  await connectDB();
+  try {
+    const task = await Task.findById(params.id).populate('assignedTo projectId');
+    return task
+      ? NextResponse.json(task)
+      : NextResponse.json({ error: 'Task not found' }, { status: 404 });
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to fetch task' }, { status: 500 });
+  }
+}
 
 export async function PUT(req, { params }) {
-  const { id } = params;
-  const { title, status } = await req.json();
-
-  const task = tasks.find(t => t.id === id);
-  if (!task) return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-
-  task.title = title ?? task.title;
-  task.status = status ?? task.status;
-
-  return NextResponse.json(task);
+  await connectDB();
+  try {
+    const updates = await req.json();
+    const task = await Task.findByIdAndUpdate(params.id, updates, { new: true });
+    return task
+      ? NextResponse.json(task)
+      : NextResponse.json({ error: 'Task not found' }, { status: 404 });
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
+  }
 }
 
 export async function DELETE(req, { params }) {
-  const { id } = params;
-  const index = tasks.findIndex(t => t.id === id);
-
-  if (index === -1) return NextResponse.json({ error: 'Task not found' }, { status: 404 });
-
-  const deleted = tasks.splice(index, 1);
-  return NextResponse.json(deleted[0]);
+  await connectDB();
+  try {
+    const deleted = await Task.findByIdAndDelete(params.id);
+    return deleted
+      ? NextResponse.json({ message: 'Deleted successfully' })
+      : NextResponse.json({ error: 'Task not found' }, { status: 404 });
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 });
+  }
 }
