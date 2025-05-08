@@ -1,7 +1,8 @@
-'use client';
+"use client";
 
-import KanbanBoard from "../../kanban/KanbanBoard"
-import LogoutButton from "../../components/LogoutButton"
+import KanbanBoard from "../../kanban/KanbanBoard";
+import LogoutButton from "../../components/LogoutButton";
+import ProjectMetrics from "app/kanban/ProjectMetrics";
 
 export default function ManagerDashboard({ session }) {
   return (
@@ -14,10 +15,11 @@ export default function ManagerDashboard({ session }) {
       </div>
 
       <div className="space-y-6">
-        <p>✔ Manage tasks within assigned projects</p>
-        <p>✔ Update status and priorities</p>
-        <p>✔ Assign team members to tasks</p>
+        <ProjectMetrics tasks={tasks} /> {/* Pass fetched tasks here */}
+        <KanbanBoard />
+      </div>
 
+      <div className="space-y-6">
         <KanbanBoard />
         {/* Add task assignment or metrics display */}
       </div>

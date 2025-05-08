@@ -1,50 +1,36 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import jwt from 'jsonwebtoken';
+import useSWR from 'swr';
 import KanbanBoard from 'app/kanban/KanbanBoard';
+import ProjectMetrics from 'app/kanban/ProjectMetrics';
+import jwt from 'jsonwebtoken';
+import { fetcherWithAuth } from 'lib/fetcherWithAuth';
 
 export default function ManagerDashboard() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const { data: tasks, error, mutate } = useSWR('/api/tasks', fetcherWithAuth);
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      setLoading(false);
-      return router.push('/auth/login');
-    }
-
-    try {
+    if (token) {
       const decoded = jwt.decode(token);
-      if (!decoded || !['admin', 'manager'].includes(decoded.role)) {
-        setLoading(false);
-        router.push('/unauthorized');
-      } else {
-        setUser(decoded);
-        setLoading(false);
-      }
-    } catch (error) {
-      setLoading(false);
-      console.error('Token decode error:', error);
-      router.push('/auth/login');
+      setRole(decoded?.role || null);
     }
-  }, [router]);
+  }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;  // You can replace this with a spinner or animation
-  }
-
-  if (!user) {
-    return null;  // Should not reach here, but a fallback
-  }
+  if (error) return <div>Failed to load tasks</div>;
+  if (!tasks) return <div>Loading...</div>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Manager Dashboard</h1>
-      <KanbanBoard />
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold text-indigo-800 dark:text-indigo-300">
+        Manager Dashboard
+      </h1>
+
+      <ProjectMetrics tasks={tasks} />
+
+      <KanbanBoard tasks={tasks} mutate={mutate} />
     </div>
   );
 }

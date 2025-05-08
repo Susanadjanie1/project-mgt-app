@@ -1,19 +1,52 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Select from "react-select";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function ProjectForm({ project = null, onProjectCreated }) {
   const [title, setTitle] = useState(project?.title || "");
   const [description, setDescription] = useState(project?.description || "");
-  const [isOpen, setIsOpen] = useState(false); // State to control modal visibility
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (project) {
       setTitle(project.title);
       setDescription(project.description);
+      setTeamMembers(
+        project.teamMembers?.map((member) => ({
+          value: member._id || member,
+          label: member.email,
+        })) || []
+      );
     }
+
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const options = data.map((user) => ({
+            value: user._id,
+            label: `${user.email} (${user.role})`,
+          }));
+          setUsers(options);
+        } else {
+          console.error("Error fetching users:", data?.error);
+        }
+      } catch (err) {
+        console.error("Failed to load users", err);
+      }
+    };
+
+    fetchUsers();
   }, [project]);
 
   const handleSubmit = async (e) => {
@@ -22,16 +55,6 @@ export default function ProjectForm({ project = null, onProjectCreated }) {
     const token = localStorage.getItem("token");
     if (!token) return alert("User not authenticated.");
 
-    let payload;
-    try {
-      payload = JSON.parse(atob(token.split(".")[1]));
-    } catch (err) {
-      return alert("Invalid token format.");
-    }
-
-    const createdBy = payload?.userId;
-    if (!createdBy) return alert("Invalid token payload.");
-
     const method = project ? "PATCH" : "POST";
     const url = project ? `/api/projects/${project._id}` : "/api/projects";
 
@@ -39,9 +62,13 @@ export default function ProjectForm({ project = null, onProjectCreated }) {
       method,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // Corrected token format
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ title, description, createdBy }),
+      body: JSON.stringify({
+        title,
+        description,
+        teamMembers: teamMembers.map((u) => u.value), // Extract ObjectIDs
+      }),
     });
 
     const data = await res.json();
@@ -49,11 +76,10 @@ export default function ProjectForm({ project = null, onProjectCreated }) {
     if (res.ok) {
       setTitle("");
       setDescription("");
+      setTeamMembers([]);
       onProjectCreated?.();
-      setIsOpen(false); // Close the modal after successful submission
-
-      // Show toast on success
-      toast.success("Project created successfully!");
+      setIsOpen(false);
+      toast.success(project ? "Project updated!" : "Project created!");
     } else {
       alert("Failed to save project: " + (data.error || "Unknown error"));
     }
@@ -61,7 +87,6 @@ export default function ProjectForm({ project = null, onProjectCreated }) {
 
   return (
     <>
-      {/* Button to open modal */}
       <button
         onClick={() => setIsOpen(true)}
         className="bg-blue-600 text-white px-6 py-3 rounded-full hover:bg-blue-700 transition"
@@ -69,7 +94,6 @@ export default function ProjectForm({ project = null, onProjectCreated }) {
         {project ? "Edit Project" : "Create Project"}
       </button>
 
-      {/* Modal */}
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-600 bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
@@ -86,6 +110,7 @@ export default function ProjectForm({ project = null, onProjectCreated }) {
                 className="border p-2 w-full rounded"
                 required
               />
+
               <textarea
                 placeholder="Project description"
                 value={description}
@@ -93,10 +118,24 @@ export default function ProjectForm({ project = null, onProjectCreated }) {
                 className="border p-2 w-full rounded"
                 required
               />
+
+              <label className="block text-sm font-medium text-gray-700">
+                Assign Team Members
+              </label>
+              <Select
+                isMulti
+                options={users}
+                value={teamMembers}
+                onChange={setTeamMembers}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                placeholder="Select team members"
+              />
+
               <div className="flex justify-end space-x-4">
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)} // Close modal without saving
+                  onClick={() => setIsOpen(false)}
                   className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
                 >
                   Cancel
@@ -112,9 +151,6 @@ export default function ProjectForm({ project = null, onProjectCreated }) {
           </div>
         </div>
       )}
-{/* 
-      Toast container */}
-      {/* <toast.Container /> */}
     </>
   );
 }

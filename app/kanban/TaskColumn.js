@@ -1,15 +1,15 @@
-'use client';
-import TaskCard from './TaskCard';
+// app/kanban/TaskColumn.js
+"use client";
+
+import TaskCard from "./TaskCard";
 
 export default function TaskColumn({ status, tasks, mutate }) {
   return (
-    <div className="bg-gray-100 p-4 rounded shadow min-h-[200px]">
-      <h2 className="font-bold text-lg capitalize mb-4">
-        {status.replace('_', ' ')}
-      </h2>
+    <div className="bg-gray-100 p-4 rounded shadow">
+      <h3 className="text-lg font-semibold capitalize mb-2">{status.replace('_', ' ')}</h3>
       <div className="space-y-2">
-        {tasks.map(task => (
-          <TaskCard key={task.id} task={task} mutate={mutate} />
+        {tasks.map((task) => (
+          <TaskCard key={task._id} task={task} mutate={mutate} />
         ))}
       </div>
     </div>

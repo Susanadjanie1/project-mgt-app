@@ -1,6 +1,7 @@
 // app/models/User.js
 
 import mongoose from 'mongoose';
+import { ROLES } from 'lib/constants';
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -14,8 +15,8 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'manager', 'team'], // Define roles for filtering if needed
-    default: 'team',
+    enum: Object.values(ROLES),
+    default: ROLES.MEMBER,
   },
 });
 

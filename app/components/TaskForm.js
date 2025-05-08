@@ -14,16 +14,16 @@ export default function TaskForm({ projectId, selectedTask, onTaskSaved }) {
   });
 
   const [users, setUsers] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Modal open state
+  const [isModalOpen, setIsModalOpen] = useState(!!selectedTask);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const token = localStorage.getItem('token'); // 🔑 Retrieve token
+        const token = localStorage.getItem('token');
 
         const res = await fetch('/api/users', {
           headers: {
-            Authorization: `Bearer ${token}`, // 🛡️ Send token in header
+            Authorization: `Bearer ${token}`,
           },
         });
 
@@ -46,16 +46,24 @@ export default function TaskForm({ projectId, selectedTask, onTaskSaved }) {
 
   useEffect(() => {
     if (selectedTask) {
+      const assignedEmails = selectedTask.assignedTo.map(user =>
+        typeof user === 'string' ? user : user.email
+      );
+  
       setTask({
         title: selectedTask.title,
         description: selectedTask.description,
-        assignedTo: selectedTask.assignedTo.map(email => ({
-          value: email,
-          label: email,
-        })),
+        assignedTo: assignedEmails,
         priority: selectedTask.priority,
         dueDate: selectedTask.dueDate || '',
       });
+    }
+  }, [selectedTask]);
+  
+
+  useEffect(() => {
+    if (selectedTask) {
+      setIsModalOpen(true);
     }
   }, [selectedTask]);
 
@@ -71,7 +79,7 @@ export default function TaskForm({ projectId, selectedTask, onTaskSaved }) {
     const emails = selectedOptions ? selectedOptions.map(option => option.value) : [];
     setTask((prev) => ({
       ...prev,
-      assignedTo: emails, // Set the assignedTo field as an array of emails
+      assignedTo: emails,
     }));
   };
 
@@ -83,22 +91,25 @@ export default function TaskForm({ projectId, selectedTask, onTaskSaved }) {
       ? `/api/tasks/${selectedTask._id}`
       : '/api/tasks';
 
+    const token = localStorage.getItem('token');
+
     try {
       const res = await fetch(url, {
-        method: method,
+        method,
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           ...task,
-          projectId, // Include projectId
+          projectId,
         }),
       });
 
       if (res.ok) {
         toast.success('Task saved successfully');
         onTaskSaved();
-        setIsModalOpen(false); // Close modal after submission
+        setIsModalOpen(false);
         setTask({
           title: '',
           description: '',
@@ -114,27 +125,28 @@ export default function TaskForm({ projectId, selectedTask, onTaskSaved }) {
     }
   };
 
-  // Open and Close modal handlers
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
   return (
     <div>
-      <button
-        onClick={openModal}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        Assign Task
-      </button>
+      {!selectedTask && (
+        <button
+          onClick={openModal}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Assign Task
+        </button>
+      )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
             <h3 className="text-xl font-semibold">
               {selectedTask ? 'Edit Task' : 'Create Task'}
             </h3>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div>
                 <label className="block text-sm">Title</label>
                 <input
@@ -189,9 +201,7 @@ export default function TaskForm({ projectId, selectedTask, onTaskSaved }) {
                 <Select
                   isMulti
                   name="assignedTo"
-                  value={task.assignedTo.map(email => (
-                    users.find(user => user.value === email) || null
-                  ))}
+                  value={users.filter(user => task.assignedTo.includes(user.value))}
                   onChange={handleAssignChange}
                   options={users}
                   className="w-full"

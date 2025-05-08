@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import useSWR from 'swr';
 import jwt from 'jsonwebtoken';
-// import AssignedTasks from '@/components/AssignedTasks';
+import MemberDashboard from './MemberDashboard';
+import { fetcherWithAuth } from 'lib/fetcherWithAuth';
 
-export default function MemberDashboard() {
+export default function MemberPage() {
   const [user, setUser] = useState(null);
   const router = useRouter();
 
@@ -32,12 +34,12 @@ export default function MemberDashboard() {
     }
   }, [router]);
 
-  if (!user) return <div>Loading...</div>;
+  const { data: tasks, error, mutate } = useSWR('/api/tasks', fetcherWithAuth);
+
+  if (!user || !tasks) return <div>Loading...</div>;
+  if (error) return <div>Failed to load tasks</div>;
 
   return (
-    <div className="p-6">
-      {/* <h1 className="text-2xl font-bold mb-4">My Tasks</h1>
-      <AssignedTasks userId={user.userId} /> */}
-    </div>
+    <MemberDashboard session={{ user }} tasks={tasks} mutate={mutate} />
   );
 }

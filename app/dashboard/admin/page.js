@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import AdminDashboardClient from "../../components/AdminDashboardClient";
+import AdminDashboardClient from "./DashboardPage";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -18,7 +18,7 @@ export default function Dashboard() {
 
     try {
       // Decode payload (safely, without verifying)
-      const decoded = JSON.parse(atob(token.split('.')[1]));
+      const decoded = JSON.parse(atob(token.split(".")[1]));
 
       if (decoded.role !== "admin") {
         router.push("/unauthorized");
