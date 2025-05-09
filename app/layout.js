@@ -3,7 +3,7 @@ import "./globals.css";
 import { ToastContainer } from "react-toastify";
 import { ThemeProvider } from "./components/ThemeProvider";
 import { Navbar } from "./components/Navbar";
-import Sidebar from "./components/Sidebar";
+// import Sidebar from "./components/Sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

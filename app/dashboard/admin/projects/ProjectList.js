@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import ProjectEditModal from "../admin/ProjectEditModal";
+import ProjectEditModal from "../ProjectEditModal";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 
 // ...imports remain the same

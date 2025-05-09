@@ -1,13 +1,39 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import useSWR from 'swr';
+import { jwtDecode } from 'jwt-decode';
 import TaskColumn from './TaskColumn';
 import { fetcherWithAuth } from 'lib/fetcherWithAuth';
 
 const STATUSES = ['todo', 'in_progress', 'done'];
 
-export default function KanbanBoard({ userId }) {
-  const { data: tasks, error, mutate } = useSWR('/api/tasks', fetcherWithAuth);
+export default function KanbanBoard({ userId, tasks: propTasks, mutate: propMutate }) {
+  const [userRole, setUserRole] = useState(null);
+
+  // Only fetch tasks if they weren't passed as props
+  const {
+    data: fetchedTasks,
+    error,
+    mutate: fetchMutate,
+  } = useSWR(propTasks ? null : '/api/tasks', fetcherWithAuth);
+
+  const tasks = propTasks || fetchedTasks;
+  const mutate = propMutate || fetchMutate;
+
+  // Get user role from token in localStorage
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUserRole(decoded?.role || 'guest');
+      } catch (err) {
+        console.error('Failed to decode JWT:', err);
+        setUserRole('guest');
+      }
+    }
+  }, []);
 
   if (error) {
     console.error(error);
@@ -15,7 +41,7 @@ export default function KanbanBoard({ userId }) {
   }
 
   if (!tasks) {
-    return <div className="p-4">Loading...</div>;
+    return <div className="p-4">Loading tasks...</div>;
   }
 
   if (!Array.isArray(tasks)) {
@@ -37,6 +63,7 @@ export default function KanbanBoard({ userId }) {
             status={status}
             tasks={filteredTasks.filter((task) => task.status === status)}
             mutate={mutate}
+            userRole={userRole}
           />
         ))}
       </div>
